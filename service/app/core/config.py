@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     )
 
     temperature: float = 0
-    llm_model: str ="qwen3-max"
+    llm_model: str = "qwen3-max"
+    database_url: str
 
 settings = Settings()

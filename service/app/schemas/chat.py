@@ -1,11 +1,11 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 class FormItem(BaseModel):
     type: str
     label: str
-    meta_data: Optional[dict] = Field(default={}, description="meta data for further request")
+    meta_data: Optional[Dict[str, Any]] = Field(default={}, description="meta data for further request")
 
 class MetaData(BaseModel):
     option: Optional[List[str]] = Field(default=None, description="option for further request")

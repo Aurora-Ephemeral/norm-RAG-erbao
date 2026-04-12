@@ -1,9 +1,9 @@
 import re
-from typing import List
+from typing import Dict, List
 from langchain_community.embeddings import DashScopeEmbeddings
 import numpy as np
 
-CATE_RULES: dict[str, List[str]] = {
+CATE_RULES: Dict[str, List[str]] = {
     "板材": [
         "板材", "钢板", "钢带", "冷轧", "热镀锌", "拉伸", "屈服", "抗拉强度",
         "延伸率", "冲压", "深冲", "sheet", "steel", "Blech", "Stahl",
@@ -50,7 +50,7 @@ class IntentRouter:
     def cos_similarity(a, b):
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-    def predict(self, query: str) -> dict:
+    def predict(self, query: str) -> Dict[str, List[str]]:
         final_cat = []
         final_norms = []
         # rule-based:

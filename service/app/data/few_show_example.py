@@ -1,4 +1,7 @@
-FEW_SHOT_EXAMPLES: list[dict] = [
+from typing import Any, Dict, List
+
+
+FEW_SHOT_EXAMPLES: List[Dict[str, Any]] = [
     {
         "context": (
             "第3条 保密义务：乙方在合同终止后2年内不得向第三方披露商业机密，"
