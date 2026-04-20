@@ -1,6 +1,9 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import String
+from app.domain.common.schemas import PageResult
+import math
 
 ModelType = TypeVar("ModelType")
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -14,8 +17,14 @@ class BaseCrud(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def get(self, id: int) -> Optional[ModelType]:
         return self.db.query(self.model).filter(self.model.id == id).first()
 
-    def get_by_page(self, skip: int = 0, limit: int = 100) -> List[ModelType]:
-        return self.db.query(self.model).offset(skip).limit(limit).all()
+    def get_by_page(self, current: int = 0, size: int = 100, filter_obj:Dict[str, Any] = {}) -> PageResult[ModelType]:
+        total = self.db.query(self.model).count()
+        # calculate the maximum number of pages
+        max_page = max(1, math.ceil(total / size))
+        current = min(current, max_page)
+        query = self._apply_filter(self.db.query(self.model), filter_obj)
+        rows = query.offset((current - 1) * size).limit(size).all()
+        return PageResult(total=total, rows=rows, current=current, size=size)
 
     def get_all(self) -> List[ModelType]:
         return self.db.query(self.model).all()
@@ -64,3 +73,17 @@ class BaseCrud(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             self.db.rollback()
             raise e
         return obj
+    
+    def _apply_filter(self, query, filter_obj: Dict[str, Any]):
+        for key, value in filter_obj.items():
+            if value == None:
+                continue
+            column = getattr(self.model, key, None)
+            if column is None:
+                continue
+            col_type = self.model.__table__.c[key].type
+            if isinstance(col_type, String):
+                query = query.filter(column.like(f"%{value}%"))
+            else:
+                query = query.filter(column == value)
+        return query

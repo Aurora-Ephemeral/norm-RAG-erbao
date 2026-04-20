@@ -63,27 +63,6 @@ def list_files():
     # TODO: Implement file list logic
     raise HTTPException(status_code=501, detail="Not implemented")
 
-# document related api
-@router.delete("/document/delete")
-def delete_file():
-    # TODO: Implement file delete logic
-    raise HTTPException(status_code=501, detail="Not implemented")
-
-@router.get("/document/listByPage")
-def list_documents():
-    # TODO: Implement file list logic
-    raise HTTPException(status_code=501, detail="Not implemented")
-
-
-@router.put("/document/update")
-def update_document():
-    # TODO: Implement file update logic
-    raise HTTPException(status_code=501, detail="Not implemented")
-
-@router.post("/document/create")
-def create_document():
-    # TODO: Implement file create logic
-    raise HTTPException(status_code=501, detail="Not implemented")
 
 # chunk related api
 # TODO:
