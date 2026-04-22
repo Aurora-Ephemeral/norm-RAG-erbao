@@ -60,6 +60,19 @@ class MinIOClient:
         except S3Error as e:
             raise RuntimeError(f"Failed to delete object {storage_path}") from e
 
+    def download_bytes(self, storage_path: str) -> bytes:
+        object_key = self._object_key_from_path(storage_path)
+        response = None
+        try:
+            response = self._client.get_object(self._bucket, object_key)
+            return response.read()
+        except S3Error as e:
+            raise RuntimeError(f"Failed to download object {storage_path}") from e
+        finally:
+            if response:
+                response.close()
+                response.release_conn()
+
     def get_presigned_url(self, storage_path: str) -> str:
         object_key = self._object_key_from_path(storage_path)
         try:

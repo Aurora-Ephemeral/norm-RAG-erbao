@@ -79,6 +79,7 @@ class FileService:
             raise e
 
         # 6. processing document(spilt + embedding)
+        
         return RawFileUploadResult(
             file_exist = False,
             doc_exist = False,

@@ -55,7 +55,7 @@ class RawFileInDBBase(RawFileBase):
 class RawFile(RawFileInDBBase):
     pass
 
-class RawFileUploadResult:
+class RawFileUploadResult(BaseModel):
     file_exist: bool = False
     doc_exist: bool = False
     data: RawFile = Field(default=None, description="RawFile data")
