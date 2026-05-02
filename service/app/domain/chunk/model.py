@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import BigInteger, DateTime, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import BigInteger, DateTime, Integer, String, Text, JSON,func
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.knowledge_base.model import Base
@@ -29,7 +29,7 @@ class RagChunk(Base):
     embedding: Mapped[Optional[list]] = mapped_column(Vector(1024), nullable=True)
     page_no: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     section_title: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    metadata_json: Mapped[Optional[Dict[str, Any]]] = mapped_column("metadata", JSONB, nullable=True)
+    metadata_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     created_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

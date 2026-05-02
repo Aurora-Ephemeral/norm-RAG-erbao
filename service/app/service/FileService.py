@@ -6,7 +6,7 @@ from app.crud.DocumentCrud import DocumentCrud
 from app.domain.file.md5 import Md5Utils
 from app.domain.document.schemas import DocumentCreate
 from app.domain.file.schemas import RawFile, RawFileCreate, RawFileUploadResult
-from app.domain.file.task import processing_document_task
+from app.domain.file.tasks import processing_document_task
 from app.core.minIO import MinIOClient, UploadResult
 class FileService:
     def __init__(self, db: Session, minio: MinIOClient):
