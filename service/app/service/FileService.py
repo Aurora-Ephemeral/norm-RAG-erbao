@@ -6,6 +6,7 @@ from app.crud.DocumentCrud import DocumentCrud
 from app.domain.file.md5 import Md5Utils
 from app.domain.document.schemas import DocumentCreate
 from app.domain.file.schemas import RawFile, RawFileCreate, RawFileUploadResult
+from app.domain.file.task import processing_document_task
 from app.core.minIO import MinIOClient, UploadResult
 class FileService:
     def __init__(self, db: Session, minio: MinIOClient):
@@ -44,13 +45,13 @@ class FileService:
             if fetch_doc is not None:
                 return RawFileUploadResult(
                     file_exist = True,
-                    doc_exist = False,
+                    doc_exist = True,
                     data=RawFile.model_validate(fetch_file)
                 )
             else:
                 return RawFileUploadResult(
                     file_exist = True,
-                    doc_exist = True,
+                    doc_exist = False,
                     data=RawFile.model_validate(fetch_file)
                 )
         # 3. if not, upload it to minIO storage 
@@ -67,7 +68,7 @@ class FileService:
             ))
 
             # 5. save document info to database
-            self.crud_doc.create(DocumentCreate(
+            db_doc = self.crud_doc.create(DocumentCreate(
                 file_id=db_file.id,
                 knowledge_base_id=knowledge_base_id,
                 doc_title=file_name if file_name else file.filename,
@@ -78,8 +79,9 @@ class FileService:
             await self.minio.delete(upload_result.storage_path)
             raise e
 
-        # 6. processing document(spilt + embedding)
-        
+        # 6. trigger async parse + chunk pipeline
+        processing_document_task.delay(str(db_file.id), str(db_doc.id))
+
         return RawFileUploadResult(
             file_exist = False,
             doc_exist = False,

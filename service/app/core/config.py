@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     temperature: float = 0
     llm_model: str = "qwen3-max"
+    embedding_model: str = "text-embedding-v3"
     database_url: str
 
     minio_endpoint: str

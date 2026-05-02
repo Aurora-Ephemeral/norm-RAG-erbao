@@ -41,6 +41,16 @@ class BaseCrud(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             raise e
         return db_obj
 
+    def bulk_create(self, obj_ins:List[CreateSchemaType]) -> List[ModelType]:
+        try:
+            db_objs = [self.model(**obj_in.model_dump()) for obj_in in obj_ins]
+            self.db.add_all(db_objs)
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise e
+        return db_objs
+
     def update(
         self,
         id: int,

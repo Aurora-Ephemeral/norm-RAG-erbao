@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from sqlalchemy import BigInteger, Boolean, CHAR, CheckConstraint, DateTime, Text, String, UniqueConstraint, func
+from sqlalchemy import BigInteger, Boolean, CHAR, CheckConstraint, DateTime, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,19 +20,6 @@ class FileStatusEnum(str, Enum):
     ACTIVE = "ACTIVE"
     DELETED = "DELETED"
 
-
-class ParseStatusEnum(str, Enum):
-    PENDING = "PENDING"
-    PROCESSING = "PROCESSING"
-    DONE = "DONE"
-    FAILED = "FAILED"
-
-
-class EmbeddingStatusEnum(str, Enum):
-    PENDING = "PENDING"
-    PROCESSING = "PROCESSING"
-    DONE = "DONE"
-    FAILED = "FAILED"
 
 
 class RawFile(Base):
@@ -60,9 +47,6 @@ class RawFile(Base):
     storage_type: Mapped[str] = mapped_column(String(32), default=StorageTypeEnum.S3, nullable=False)
     storage_path: Mapped[str] = mapped_column(String(1024), nullable=False)
     status: Mapped[str] = mapped_column(String(32), default=FileStatusEnum.UPLOADED, nullable=False)
-    parse_status: Mapped[str] = mapped_column(String(32), default=ParseStatusEnum.PENDING, nullable=False)
-    embedding_status: Mapped[str] = mapped_column(String(32), default=EmbeddingStatusEnum.PENDING, nullable=False)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     metadata_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     created_time: Mapped[datetime] = mapped_column(

@@ -114,7 +114,7 @@ def _extract_metadata(all_text: str, first_lines: List[str]) -> Dict[str, Any]:
 
     std = _STANDARD_NO_RE.search(header_block)
     if std:
-        meta['standard_no'] = std.group().strip()
+        meta['standard_no'] = re.sub(r'\s+', '', std.group())
 
     date = _ISSUE_DATE_RE.search(header_block)
     if date:
