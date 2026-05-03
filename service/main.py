@@ -1,7 +1,11 @@
+import logging
+
 from fastapi import FastAPI
 
 from app.api.main import api_router
 from app.core.exception_handler import register_exception_handlers
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 register_exception_handlers(app)

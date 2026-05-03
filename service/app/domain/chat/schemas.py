@@ -16,4 +16,7 @@ class AskRequest(BaseModel):
     session_id: str = Field(default="", description="session id, for history storage")
     type: str = Field(default="text", description="type of message('category')")
 
-
+class QueryProcessing(BaseModel):
+    english_query: str
+    standard_nos: List[str]
+    part_types: List[str]

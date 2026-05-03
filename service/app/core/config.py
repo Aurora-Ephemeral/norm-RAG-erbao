@@ -8,8 +8,10 @@ class Settings(BaseSettings):
         env_file=f".env.{os.getenv('APP_ENV', 'development')}",
     )
 
-    temperature: float = 0
+    temperature: float = 0.0
     llm_model: str = "qwen3-max"
+    llm_max_tokens: int = 2048
+    llm_enable_thinking: bool = False
     embedding_model: str = "text-embedding-v3"
     database_url: str
 

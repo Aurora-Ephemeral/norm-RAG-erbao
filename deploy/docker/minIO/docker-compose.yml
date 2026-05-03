@@ -4,8 +4,8 @@ services:
     container_name: minio
     restart: always
     ports:
-      - "9000:9000"   # S3 API 端口
-      - "9001:9001"   # Web 控制台端口
+      - "9000:9000"   # S3 API port
+      - "9001:9001"   # Web console port
     volumes:
       - /data/minio:/data
     environment:

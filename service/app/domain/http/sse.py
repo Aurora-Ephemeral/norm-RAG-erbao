@@ -1,7 +1,5 @@
 import json
 
-
-
 def sse_headers():
     return {
         "Cache-Control": "no-cache, no-store, must-revalidate",
