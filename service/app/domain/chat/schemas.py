@@ -14,7 +14,6 @@ class MetaData(BaseModel):
 class AskRequest(BaseModel):
     message: str
     session_id: str = Field(default="", description="session id, for history storage")
-    type: str = Field(default="text", description="type of message('category')")
 
 class QueryProcessing(BaseModel):
     english_query: str
