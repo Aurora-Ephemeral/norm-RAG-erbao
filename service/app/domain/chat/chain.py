@@ -38,7 +38,6 @@ def _format_docs(docs: List[Document]) -> str:
 
 def build_rag_chain(retriever: BaseRetriever) -> Runnable:
     
-    
     #TODO: consider history management later
     return (
         {

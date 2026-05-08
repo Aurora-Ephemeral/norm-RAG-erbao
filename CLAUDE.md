@@ -54,12 +54,18 @@ PostgreSQL
 
 - **`app/api/routes/`** — FastAPI routers: `chat.py` (SSE streaming Q&A), `knowledgebase.py` (KB CRUD), `document.py` (stub/TODO)
 - **`app/service/`** — Business logic; validates, maps schemas, raises HTTP exceptions
-- **`app/crud/`** — `BaseCrud[ModelType, CreateSchema, UpdateSchema]` is a generic CRUD base; domain-specific cruds inherit from it
-- **`app/domain/`** — SQLAlchemy ORM models and Pydantic schemas, organized by domain (e.g., `knowledge_base/model.py`, `knowledge_base/schemas.py`)
-- **`app/rag/`** — LangChain pipeline (`chain.py`) + prompt templates (`prompt.py`). Uses `ChatTongyi` (Qwen). **Note:** retriever is not yet wired up — context is currently a placeholder.
-- **`app/util/query.py`** — `IntentRouter`: classifies user queries into categories (板材/螺栓/表面防护/涂装) using keyword rules + DashScope embedding similarity
-- **`app/util/https.py`** — SSE streaming helpers
-- **`app/core/config.py`** — Pydantic Settings; key env vars: `LLM_MODEL`, `TEMPERATURE`, `DATABASE_URL`
+- **`app/crud/`** — `BaseCrud[ModelType, CreateSchema, UpdateSchema]` is a generic CRUD base; `ChunkCrud` adds `vector_search()` and `fulltext_search()` with metadata pre-filtering and configurable `limit`
+- **`app/domain/chat/`** — LangChain chain (`chain.py`), prompt templates (`prompt.py`), LLM factory (`llm.py`), query schemas (`schemas.py`)
+- **`app/domain/retrieval/`** — Pluggable retrieval pipeline layer:
+  - `pipeline.py` — `RetrievalPipeline` ABC: defines `search(query) → List[RagChunk]`
+  - `vector.py` — `VectorPipeline`: embedding + pgvector cosine search
+  - `fulltext.py` — `FulltextPipeline`: PostgreSQL tsvector + ts_rank (BM25-style)
+  - `hybrid.py` — `HybridPipeline`: runs both in parallel, applies RRF, then reranks
+  - `fusion.py` — `reciprocal_rank_fusion()`: pure algorithm, no framework dependency
+  - `rerank.py` — `rerank()`: converts RagChunk↔Document, calls DashScope gte-rerank, falls back to RRF order on failure
+  - `retriever.py` — `RAGRetriever(BaseRetriever)`: thin LangChain adapter, pipeline → `List[Document]`
+- **`app/core/config.py`** — Pydantic Settings; key env vars: `LLM_MODEL`, `TEMPERATURE`, `DATABASE_URL`, `VECTOR_SEARCH_TOP_K`, `FULLTEXT_SEARCH_TOP_K`, `HYBRID_CANDIDATE_K`, `RERANK_TOP_K`, `RERANKER_MODEL`
+- **`app/core/model.py`** — DashScope model factories: `return_rerank_model()`. Intended to consolidate LLM / embedding / reranker factories here over time.
 - **`app/db/Postgresql.py`** — SQLAlchemy engine + `get_db()` dependency for session injection
 
 ### Standard API Response Shape
@@ -81,6 +87,18 @@ Defined in `app/domain/http/schemas.py` as `HTTPResponse`.
 ## Current Implementation Status
 
 - Knowledge Base CRUD: fully implemented end-to-end
-- Chat/RAG: intent routing works; RAG chain built but retriever is TODO (dummy context)
+- Document processing pipeline: PDF parsing → chunking → embedding → pgvector storage, fully working
+- Query preprocessing: translation + standard number + part type extraction via single LLM call
+- Hybrid retrieval: `HybridPipeline` wired into `ChatService` — vector + fulltext + RRF + DashScope reranker, all complete
+- `fts_vector` generated column and GIN index added to `rag_chunk` table (migration applied manually)
 - Document API: all endpoints return 501 Not Implemented
 - Frontend: layout scaffold in place; page content is mostly placeholder
+
+## Retrieval Design Notes
+
+The retrieval layer uses a two-layer pattern to separate pipeline logic from LangChain:
+- All pipelines implement `RetrievalPipeline.search(query) → List[RagChunk]` — pure Python, no LangChain
+- `RAGRetriever(BaseRetriever)` is a thin adapter: calls `pipeline.search()`, converts `RagChunk → Document`
+- `ChatService` selects the pipeline and passes it to `RAGRetriever`; `chain.py` is never touched when switching strategies
+
+Candidate funnel: `hybrid_candidate_k` (default 30) candidates per path → RRF fusion → reranker → `rerank_top_k` (default 8) to LLM.

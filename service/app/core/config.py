@@ -13,7 +13,11 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 2048
     llm_enable_thinking: bool = False
     embedding_model: str = "text-embedding-v3"
-    retrieval_top_k: int = 10
+    reranker_model: str = "gte-rerank"
+    vector_search_top_k: int = 10
+    fulltext_search_top_k: int = 10
+    hybrid_candidate_k: int = 30
+    rerank_top_k: int = 8
     database_url: str
 
     minio_endpoint: str

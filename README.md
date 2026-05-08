@@ -94,31 +94,49 @@ User question (Chinese / English / German)
     ▼
 ① Query Preprocessing (single LLM call)
     ├── Translate to English (all documents are in English)
-    ├── Extract standard numbers (PV1209 / DIN EN ISO 9227 / etc.)
+    ├── Extract standard numbers (TL 240 / DIN EN ISO 9227 / etc.)
     └── Identify part types (sheet_metal / bolt / surface_protection / coating)
     │
     ▼
-② Hybrid Retrieval  ⚠️ In progress
-    ├── Vector search: pgvector cosine similarity (semantic matching)
-    ├── Full-text search: PostgreSQL tsvector (exact standard number matching)
-    └── RRF merge (Reciprocal Rank Fusion)
+② Hybrid Retrieval (parallel)
+    ├── Vector search:     pgvector cosine similarity  → top hybrid_candidate_k
+    └── Full-text search:  PostgreSQL tsvector / BM25  → top hybrid_candidate_k
     │
     ▼
-③ Rerank  ⚠️ In progress
-    └── Re-rank top-20 → top-5 (DashScope Rerank model)
+③ RRF Fusion (Reciprocal Rank Fusion)
+    └── Merge and deduplicate both result lists by rank position (k=60)
     │
     ▼
-④ Prompt Assembly  ⚠️ In progress
-    ├── System prompt (role definition + numeric citation rules)
-    ├── Retrieved chunks (with source annotations)
+④ Rerank
+    └── DashScope gte-rerank cross-encoder → top rerank_top_k
+    │
+    ▼
+⑤ Prompt Assembly
+    ├── System prompt (role definition + citation rules)
+    ├── Retrieved chunks (with section / page / type annotations)
     └── User question (English)
     │
     ▼
-⑤ LLM Streaming Generation (Qwen3-Max)
+⑥ LLM Streaming Generation (Qwen3-Max)
     │
     ▼
 SSE pushed to frontend
 ```
+
+### Retrieval Layer Architecture
+
+The retrieval layer is decoupled from the LangChain chain via a two-layer design:
+
+```
+RetrievalPipeline (ABC)          Pure Python — no LangChain dependency
+    ├── VectorPipeline           embed_query → ChunkCrud.vector_search
+    ├── FulltextPipeline         ChunkCrud.fulltext_search (tsvector + ts_rank)
+    └── HybridPipeline           VectorPipeline + FulltextPipeline → RRF → Reranker
+
+RAGRetriever (BaseRetriever)     Thin LangChain adapter — pipeline → List[Document]
+```
+
+This separation means pipeline logic is independently testable and new retrieval strategies can be added without touching the chain or service layer.
 
 ---
 
@@ -147,12 +165,21 @@ project/
 │   │   │   └── FileCrud.py
 │   │   ├── domain/
 │   │   │   ├── chat/
-│   │   │   │   ├── llm.py          # ChatTongyi factory, reads settings
+│   │   │   │   ├── llm.py          # ChatTongyi factory
 │   │   │   │   ├── prompt.py       # Prompt templates
 │   │   │   │   ├── chain.py        # LangChain LCEL chain builders
+│   │   │   │   ├── retriever.py    # VectorRetriever (legacy, kept for reference)
 │   │   │   │   └── schemas.py      # QueryProcessing Pydantic model
+│   │   │   ├── retrieval/          # Retrieval pipeline layer
+│   │   │   │   ├── pipeline.py     # RetrievalPipeline ABC
+│   │   │   │   ├── vector.py       # VectorPipeline (embedding + cosine search)
+│   │   │   │   ├── fulltext.py     # FulltextPipeline (tsvector + BM25)
+│   │   │   │   ├── hybrid.py       # HybridPipeline (vector + fulltext + RRF + rerank)
+│   │   │   │   ├── fusion.py       # reciprocal_rank_fusion()
+│   │   │   │   ├── rerank.py       # rerank() — calls DashScope, maps back to RagChunk
+│   │   │   │   └── retriever.py    # RAGRetriever — thin LangChain BaseRetriever adapter
 │   │   │   ├── chunk/
-│   │   │   │   └── model.py        # RagChunk, Vector(1024) field
+│   │   │   │   └── model.py        # RagChunk, Vector(1024), fts_vector (generated)
 │   │   │   ├── document/
 │   │   │   │   └── model.py        # Document, DocStatusEnum
 │   │   │   ├── file/
@@ -164,6 +191,12 @@ project/
 │   │   │       └── model.py        # KnowledgeBase, RetrievalStrategyEnum
 │   │   └── core/
 │   │       ├── config.py           # Pydantic Settings, reads .env
+│   │       ├── celery.py           # Celery config, autodiscover_tasks
+│   │       └── minIO.py
+│   │   └── core/
+│   │       ├── config.py           # Pydantic Settings, reads .env
+│   │       ├── model.py            # DashScope model factories (LLM / Embedding / Reranker)
+│   │       ├── embedding.py        # embed_query / embed_batch
 │   │       ├── celery.py           # Celery config, autodiscover_tasks
 │   │       └── minIO.py
 │   └── .env.development            # Local env vars (not committed)
@@ -189,13 +222,13 @@ project/
 - [x] Vectorization pipeline (two-stage Celery tasks + pgvector storage)
 - [x] Query preprocessing (translation + standard number extraction + part type identification, single LLM call)
 - [x] SSE streaming response framework
+- [x] Hybrid retrieval: vector search + full-text search (tsvector/BM25) + RRF fusion
+- [x] Reranker: DashScope gte-rerank cross-encoder, with RRF-order fallback
+- [x] Retrieval pipeline layer: pluggable strategy design (VectorPipeline / FulltextPipeline / HybridPipeline)
 
-### In Progress
+### In Progress / Next Up
 
-- [ ] **Hybrid retrieval**: pgvector vector search + PostgreSQL full-text search (tsvector) + RRF fusion
 - [ ] **Cross-document references**: secondary retrieval for standards referenced within retrieved chunks
-- [ ] **Rerank**: re-ranking model to compress retrieval results
-- [ ] **RAG Chain**: full Q&A chain with context (`build_rag_chain`)
 - [ ] **Conversation history**: `conversation` / `message` tables, sliding-window history injection
 
 ### Planned
@@ -204,6 +237,8 @@ project/
 - [ ] **Frontend pages**: knowledge base management, document list, Q&A interface, history view
 - [ ] **Document versioning**: `is_latest` field already reserved; supports multiple versions of the same standard
 - [ ] **Evaluation framework**: RAG quality metrics (recall rate, answer relevance)
+- [ ] **Observability**: full-chain tracing (LangSmith or custom), structured logging with request_id, Prometheus + Grafana metrics (QPS / P99 latency / error rate)
+- [ ] **Token usage tracking**: record input/output token counts per request for cost monitoring and quota control
 
 ---
 
@@ -252,6 +287,11 @@ npm run dev
 | `LLM_MAX_TOKENS` | Maximum output tokens | `2048` |
 | `LLM_ENABLE_THINKING` | Enable Qwen3 thinking chain | `false` |
 | `EMBEDDING_MODEL` | Embedding model | `text-embedding-v3` |
+| `RERANKER_MODEL` | Reranker model | `gte-rerank` |
+| `VECTOR_SEARCH_TOP_K` | Candidates per vector search | `10` |
+| `FULLTEXT_SEARCH_TOP_K` | Candidates per full-text search | `10` |
+| `HYBRID_CANDIDATE_K` | Candidates per path in hybrid mode | `30` |
+| `RERANK_TOP_K` | Final results returned after reranking | `8` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql+psycopg://...` |
 | `REDIS_URL` | Redis connection string | `redis://:password@host:6379/0` |
 | `MINIO_ENDPOINT` | MinIO address | `localhost:9000` |
