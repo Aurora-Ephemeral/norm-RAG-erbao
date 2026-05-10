@@ -17,7 +17,9 @@ class BaseCrud(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def get(self, id: int) -> Optional[ModelType]:
         return self.db.query(self.model).filter(self.model.id == id).first()
 
-    def get_by_page(self, current: int = 0, size: int = 100, filter_obj:Dict[str, Any] = {}) -> PageResult[ModelType]:
+    def get_by_page(self, current: int = 0, size: int = 100, filter_obj: Optional[Dict[str, Any]] = None) -> PageResult[ModelType]:
+        if filter_obj is None:
+            filter_obj = {}
         total = self.db.query(self.model).count()
         # calculate the maximum number of pages
         max_page = max(1, math.ceil(total / size))
@@ -26,8 +28,11 @@ class BaseCrud(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         rows = query.offset((current - 1) * size).limit(size).all()
         return PageResult(total=total, rows=rows, current=current, size=size)
 
-    def get_all(self) -> List[ModelType]:
-        return self.db.query(self.model).all()
+    def get_all(self, filter_obj: Optional[Dict[str, Any]] = None) -> List[ModelType]:
+        if filter_obj is None:
+            filter_obj = {}
+        query = self._apply_filter(self.db.query(self.model), filter_obj)
+        return query.all()
 
     def create(self, obj_in: CreateSchemaType) -> ModelType:
         try:
