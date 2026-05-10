@@ -18,7 +18,7 @@ async def ask(
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     return StreamingResponse(
-        service.ask_stream(request.message.strip(), request.session_id),
+        service.ask_stream(request.message.strip(), request.conversation_id),
         media_type="text/event-stream",
         headers=sse_headers(),
     )

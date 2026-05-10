@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     fulltext_search_top_k: int = 10
     hybrid_candidate_k: int = 30
     rerank_top_k: int = 8
+    last_n_messages: int = 10
+    history_strategy: str = "sliding_window"
     database_url: str
 
     minio_endpoint: str

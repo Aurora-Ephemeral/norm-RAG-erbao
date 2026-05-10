@@ -18,3 +18,12 @@ class MessageCrud(BaseCrud[RagMessage, MessageCreate, MessageInDBBase]):
             .order_by(RagMessage.created_time)
             .all()
         )
+    
+    def get_last_n_messages(self, conversation_id: int, n: int) -> List[RagMessage]:
+        return (
+            self.db.query(RagMessage)
+            .filter(RagMessage.conversation_id == conversation_id)
+            .order_by(RagMessage.created_time.desc())
+            .limit(n)
+            .all()
+        )

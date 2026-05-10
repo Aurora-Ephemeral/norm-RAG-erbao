@@ -92,35 +92,41 @@ embed_document_task (Celery)
 User question (Chinese / English / German)
     │
     ▼
-① Query Preprocessing (single LLM call)
-    ├── Translate to English (all documents are in English)
+① History Loading
+    └── HistoryProvider.get_messages(conversation_id) → last N turns (sliding window)
+    │
+    ▼
+② Query Preprocessing (single LLM call, history injected)
+    ├── Coreference resolution (resolve pronouns / references using history)
+    ├── Translate resolved query to English
     ├── Extract standard numbers (TL 240 / DIN EN ISO 9227 / etc.)
     └── Identify part types (sheet_metal / bolt / surface_protection / coating)
     │
     ▼
-② Hybrid Retrieval (parallel)
+③ Hybrid Retrieval (parallel)
     ├── Vector search:     pgvector cosine similarity  → top hybrid_candidate_k
     └── Full-text search:  PostgreSQL tsvector / BM25  → top hybrid_candidate_k
     │
     ▼
-③ RRF Fusion (Reciprocal Rank Fusion)
+④ RRF Fusion (Reciprocal Rank Fusion)
     └── Merge and deduplicate both result lists by rank position (k=60)
     │
     ▼
-④ Rerank
+⑤ Rerank
     └── DashScope gte-rerank cross-encoder → top rerank_top_k
     │
     ▼
-⑤ Prompt Assembly
+⑥ Prompt Assembly (history injected)
     ├── System prompt (role definition + citation rules)
+    ├── Conversation history (last N turns for follow-up context)
     ├── Retrieved chunks (with section / page / type annotations)
-    └── User question (English)
+    └── User question
     │
     ▼
-⑥ LLM Streaming Generation (Qwen3-Max)
+⑦ LLM Streaming Generation (Qwen3-Max)
     │
     ▼
-SSE pushed to frontend
+SSE pushed to frontend → messages persisted to DB (user + assistant)
 ```
 
 ### Retrieval Layer Architecture
@@ -137,6 +143,23 @@ RAGRetriever (BaseRetriever)     Thin LangChain adapter — pipeline → List[Do
 ```
 
 This separation means pipeline logic is independently testable and new retrieval strategies can be added without touching the chain or service layer.
+
+### History Layer Architecture
+
+The history layer uses the same two-layer + factory pattern as the retrieval layer:
+
+```
+HistoryProvider (ABC)            Pure Python — returns List[BaseMessage] (LangChain-ready)
+    └── SlidingWindowProvider    last N turns from DB, reversed to chronological order
+
+create_history_provider(db, strategy)   Factory — reads settings.history_strategy
+```
+
+History is injected at two points via `MessagesPlaceholder(optional=True)`:
+- **Preprocessing chain**: enables coreference resolution ("it" / "该标准" → concrete entity)
+- **RAG chain**: enables contextual follow-up answers
+
+Switching strategies (e.g. future `TokenBudgetProvider`) requires only a config change — `ChatService` is unaware of which provider is active.
 
 ---
 
@@ -225,11 +248,12 @@ project/
 - [x] Hybrid retrieval: vector search + full-text search (tsvector/BM25) + RRF fusion
 - [x] Reranker: DashScope gte-rerank cross-encoder, with RRF-order fallback
 - [x] Retrieval pipeline layer: pluggable strategy design (VectorPipeline / FulltextPipeline / HybridPipeline)
+- [x] Conversation history: `rag_conversation` / `rag_message` tables, `SlidingWindowProvider`, factory pattern, injected into preprocessing + RAG chains; coreference resolution in preprocessing prompt
 
 ### In Progress / Next Up
 
 - [ ] **Cross-document references**: secondary retrieval for standards referenced within retrieved chunks
-- [ ] **Conversation history**: `conversation` / `message` tables, sliding-window history injection
+- [ ] **Token budget history strategy**: `TokenBudgetProvider` — prune history by token count (Chinese/English estimation in `common/utils.py` already in place)
 
 ### Planned
 
@@ -292,6 +316,8 @@ npm run dev
 | `FULLTEXT_SEARCH_TOP_K` | Candidates per full-text search | `10` |
 | `HYBRID_CANDIDATE_K` | Candidates per path in hybrid mode | `30` |
 | `RERANK_TOP_K` | Final results returned after reranking | `8` |
+| `HISTORY_STRATEGY` | History provider strategy | `sliding_window` |
+| `LAST_N_MESSAGES` | Number of turns kept in sliding window | `10` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql+psycopg://...` |
 | `REDIS_URL` | Redis connection string | `redis://:password@host:6379/0` |
 | `MINIO_ENDPOINT` | MinIO address | `localhost:9000` |

@@ -64,7 +64,14 @@ PostgreSQL
   - `fusion.py` — `reciprocal_rank_fusion()`: pure algorithm, no framework dependency
   - `rerank.py` — `rerank()`: converts RagChunk↔Document, calls DashScope gte-rerank, falls back to RRF order on failure
   - `retriever.py` — `RAGRetriever(BaseRetriever)`: thin LangChain adapter, pipeline → `List[Document]`
-- **`app/core/config.py`** — Pydantic Settings; key env vars: `LLM_MODEL`, `TEMPERATURE`, `DATABASE_URL`, `VECTOR_SEARCH_TOP_K`, `FULLTEXT_SEARCH_TOP_K`, `HYBRID_CANDIDATE_K`, `RERANK_TOP_K`, `RERANKER_MODEL`
+- **`app/domain/history/`** — Pluggable conversation history layer:
+  - `provider.py` — `HistoryProvider` ABC: defines `get_messages(conversation_id) → List[BaseMessage]`
+  - `slidingwindow.py` — `SlidingWindowProvider`: fetches last `window_size` turns, reverses to chronological order, converts to LangChain messages
+  - `factory.py` — `create_history_provider(db, strategy)`: reads `settings.history_strategy`, instantiates the correct provider; extend here for user-level config
+- **`app/domain/conversation/`** — Conversation entity (ORM + Pydantic schemas); `RagConversation` has `messageList` relationship with `selectinload` for detail queries
+- **`app/domain/message/`** — Message entity; `MessageRoleEnum` (user/assistant); `MessageCrud.get_last_n_messages()` for history window queries
+- **`app/domain/common/`** — Shared utilities: `utils.py` (`count_tokens()` — Chinese/English character-based token estimation); `schemas.py` (`FormattedDatetime` — Annotated type for uniform datetime serialization)
+- **`app/core/config.py`** — Pydantic Settings; key env vars: `LLM_MODEL`, `TEMPERATURE`, `DATABASE_URL`, `VECTOR_SEARCH_TOP_K`, `FULLTEXT_SEARCH_TOP_K`, `HYBRID_CANDIDATE_K`, `RERANK_TOP_K`, `RERANKER_MODEL`, `HISTORY_STRATEGY`, `LAST_N_MESSAGES`
 - **`app/core/model.py`** — DashScope model factories: `return_rerank_model()`. Intended to consolidate LLM / embedding / reranker factories here over time.
 - **`app/db/Postgresql.py`** — SQLAlchemy engine + `get_db()` dependency for session injection
 
@@ -88,9 +95,10 @@ Defined in `app/domain/http/schemas.py` as `HTTPResponse`.
 
 - Knowledge Base CRUD: fully implemented end-to-end
 - Document processing pipeline: PDF parsing → chunking → embedding → pgvector storage, fully working
-- Query preprocessing: translation + standard number + part type extraction via single LLM call
+- Query preprocessing: translation + standard number + part type extraction + coreference resolution via single LLM call
 - Hybrid retrieval: `HybridPipeline` wired into `ChatService` — vector + fulltext + RRF + DashScope reranker, all complete
 - `fts_vector` generated column and GIN index added to `rag_chunk` table (migration applied manually)
+- Conversation history: `rag_conversation` / `rag_message` tables, CRUD, `SlidingWindowProvider`, factory, injected into both preprocessing and RAG chains
 - Document API: all endpoints return 501 Not Implemented
 - Frontend: layout scaffold in place; page content is mostly placeholder
 
@@ -102,3 +110,12 @@ The retrieval layer uses a two-layer pattern to separate pipeline logic from Lan
 - `ChatService` selects the pipeline and passes it to `RAGRetriever`; `chain.py` is never touched when switching strategies
 
 Candidate funnel: `hybrid_candidate_k` (default 30) candidates per path → RRF fusion → reranker → `rerank_top_k` (default 8) to LLM.
+
+## History Layer Design Notes
+
+The history layer mirrors the retrieval layer's two-layer pattern:
+- `HistoryProvider` ABC defines `get_messages(conversation_id) → List[BaseMessage]` — pure Python, returns LangChain-ready messages
+- `create_history_provider(db, strategy)` factory in `factory.py` reads `settings.history_strategy` and instantiates the correct provider; adding a new strategy only requires a new class + one `elif` in the factory
+- `ChatService.__init__` calls the factory once; `ask_stream` only calls `get_messages()` — service layer is unaware of which strategy is active
+- History is injected into **both** chains via `MessagesPlaceholder(optional=True)`: preprocessing chain uses it for coreference resolution; RAG chain uses it for contextual follow-up answers
+- Messages are persisted after each turn: user message saved before streaming, assistant message saved after streaming completes (empty response on error is never written)
