@@ -1,59 +1,51 @@
 import { Layout, Tooltip, Button } from "tdesign-react"
 import { useTranslation } from "react-i18next"
 import { ChatIcon, FolderOpenIcon } from 'tdesign-icons-react';
+import { useNavigate, useLocation } from "react-router-dom"
 import styles from './style.module.scss'
-import { useState } from "react";
 
 const Header: React.FC = () => {
 
     const { Header } = Layout
     const { t, i18n } = useTranslation()
-    const currLang:String = i18n.language
+    const currLang: string = i18n.language
+    const navigate = useNavigate()
+    const location = useLocation()
 
-    const [ currPage, setCurrPage ] = useState('chat')
+    const isChat = location.pathname.startsWith('/chat') || location.pathname === '/'
 
     const changeLanguage = () => {
-        if(currLang === 'zh') {
-            i18n.changeLanguage('en')
-        } else {
-            i18n.changeLanguage('zh')
-        }
+        i18n.changeLanguage(currLang === 'zh' ? 'en' : 'zh')
     }
 
     const changePage = () => {
-        //TODO: add navigation logic 
-        if(currPage === 'chat') {
-            setCurrPage('knowledge')
-        } else {
-            setCurrPage('chat')
-        }
+        navigate(isChat ? '/knowledge' : '/chat')
     }
+
     return (
         <Header className={styles["app-header"]}>
             <div className={styles["app-header__logo"]}>
-                { t("system.name")}
+                {t("system.name")}
             </div>
-            <div style={{flex: 1}}></div>
+            <div style={{ flex: 1 }}></div>
             <Tooltip content={t("system.language")} placement="bottom">
-                <Button 
+                <Button
                     variant="text"
                     shape="square"
                     onClick={changeLanguage}
                 >
-                    {currLang == 'zh' ? 'EN' : '中'}
+                    {currLang === 'zh' ? 'EN' : '中'}
                 </Button>
             </Tooltip>
-            <Tooltip content={currPage == 'chat' ? t("system.chat") : t("system.knowledge")} placement="bottom">
-                <Button 
+            <Tooltip content={isChat ? t("system.knowledge") : t("system.chat")} placement="bottom">
+                <Button
                     variant="text"
                     shape="square"
-                    icon={currPage == 'chat' ?  <FolderOpenIcon size="20px"/> : <ChatIcon size="20px"/>}
+                    icon={isChat ? <FolderOpenIcon size="20px" /> : <ChatIcon size="20px" />}
                     onClick={changePage}
-                >
-                </Button>
+                />
             </Tooltip>
         </Header>
-        
     )
 }
 

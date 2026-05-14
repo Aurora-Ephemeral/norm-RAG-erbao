@@ -1,0 +1,125 @@
+/* ---- TDesign Brand Color Override → #1a1a1a ---- */
+:root {
+  --td-brand-color: #1a1a1a;
+  --td-brand-color-1: #f0f0f0;
+  --td-brand-color-2: #d9d9d9;
+  --td-brand-color-3: #bfbfbf;
+  --td-brand-color-4: #a6a6a6;
+  --td-brand-color-5: #737373;
+  --td-brand-color-6: #1a1a1a;
+  --td-brand-color-7: #141414;
+  --td-brand-color-8: #0d0d0d;
+  --td-brand-color-9: #080808;
+  --td-brand-color-10: #000000;
+  --td-brand-color-hover: #333333;
+  --td-brand-color-active: #000000;
+  --td-brand-color-focus: rgba(26, 26, 26, 0.2);
+  --td-brand-color-disabled: #999999;
+  --td-brand-color-light: rgba(26, 26, 26, 0.06);
+  --td-brand-color-light-hover: rgba(26, 26, 26, 0.12);
+}
+
+/* ---- TDesign Component Overrides ---- */
+.t-menu,
+.t-menu__item,
+.t-button,
+.t-input,
+.t-textarea__inner,
+.t-dialog,
+.t-table,
+.t-card,
+.t-popup__content,
+.t-tag {
+  color: var(--color-text-primary) !important;
+}
+
+.t-menu {
+  background: transparent !important;
+}
+
+.t-menu__item {
+  color: var(--color-text-secondary) !important;
+  border-radius: var(--radius) !important;
+}
+
+.t-menu__item.t-is-active,
+.t-menu__item:hover {
+  color: var(--color-accent) !important;
+  background: var(--color-bg-hover) !important;
+}
+
+.t-input,
+.t-textarea__inner {
+  background: var(--color-bg-elevated) !important;
+  border-color: var(--color-border) !important;
+}
+
+.t-input:hover,
+.t-textarea__inner:hover {
+  border-color: var(--color-border-light) !important;
+}
+
+.t-input:focus,
+.t-input.t-is-focused,
+.t-textarea__inner:focus {
+  border-color: #999 !important;
+  box-shadow: none !important;
+}
+
+.t-dialog {
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.t-dialog__header {
+  color: var(--color-text-primary) !important;
+}
+
+.t-table {
+  background: transparent !important;
+}
+
+.t-table th {
+  background: var(--color-bg-elevated) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+
+.t-table td {
+  border-color: var(--color-border) !important;
+}
+
+.t-table tr:hover td {
+  background: var(--color-bg-hover) !important;
+}
+
+.t-card {
+  background: var(--color-bg-elevated) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.t-button--variant-base {
+  background: var(--color-accent) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.t-button--variant-outline {
+  border-color: var(--color-border-light) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.t-button--variant-text {
+  color: var(--color-text-secondary) !important;
+}
+
+.t-button--variant-text:hover {
+  background: var(--color-bg-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.t-popup__content {
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border) !important;
+}

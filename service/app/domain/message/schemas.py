@@ -11,12 +11,12 @@ class Message(BaseModel):
 
 
 class MessageCreate(Message):
-    conversation_id: int = Field(...)
+    conversation_id: str = Field(...)
 
 
 class MessageInDBBase(Message):
     id: int
-    conversation_id: int
+    conversation_id: str
     created_time: datetime
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Optional, List
 
@@ -15,7 +16,7 @@ class RagConversation(Base):
         Index("idx_rag_conversation_updated_time", "updated_time"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     knowledge_base_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     title: Mapped[str] = mapped_column(String(500), default="", server_default="", nullable=False)

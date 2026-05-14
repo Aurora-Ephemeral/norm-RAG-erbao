@@ -19,7 +19,7 @@ class ConversationCrud(BaseCrud[RagConversation, ConversationCreate, Conversatio
             .all()
         )
 
-    def get_detail(self, conversation_id: int) -> Optional[RagConversation]:
+    def get_detail(self, conversation_id: str) -> Optional[RagConversation]:
         return (
             self.db.query(RagConversation)
             .options(selectinload(RagConversation.messageList))

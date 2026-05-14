@@ -21,7 +21,7 @@ def list_conversation(
 
 @router.get("/detail/{conversation_id}")
 def get_conversation_detail(
-    conversation_id: int,
+    conversation_id: str,
     service: ConversationService = Depends(get_conversation_service),
 ) -> HTTPResponse[ConversationDetailResponse]:
     result = service.get_detail(conversation_id)
@@ -32,15 +32,15 @@ def get_conversation_detail(
 def create_conversation(
     payload: ConversationCreate,
     service: ConversationService = Depends(get_conversation_service),
-) -> HTTPResponse[int]:
+) -> HTTPResponse[ConversationResponse]:
     result = service.create(payload)
-    return HTTPResponse.ok(data=result.id)
+    return HTTPResponse.ok(data=result)
 
 
 @router.delete("/delete/{conversation_id}")
 def delete_conversation(
-    conversation_id: int,
+    conversation_id: str,
     service: ConversationService = Depends(get_conversation_service),
-) -> HTTPResponse[int]:
+) -> HTTPResponse[str]:
     result = service.delete(conversation_id)
     return HTTPResponse.ok(data=result.id)

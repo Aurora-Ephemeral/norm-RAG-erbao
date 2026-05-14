@@ -22,7 +22,7 @@ class ChatService:
         self.history_provider = create_history_provider(db)
         self.message_crud = MessageCrud(db)
 
-    def ask_stream(self, query: str, conversation_id: int) -> Generator[str, None, None]:
+    def ask_stream(self, query: str, conversation_id: str) -> Generator[str, None, None]:
         response_chunks = []
         try:
             chat_history = self.history_provider.get_messages(conversation_id)

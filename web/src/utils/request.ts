@@ -1,12 +1,12 @@
 import axios from 'axios'
 
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_APP_BASE_API || '/api',
   timeout: 10000,
 })
 
 request.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('chat-token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }

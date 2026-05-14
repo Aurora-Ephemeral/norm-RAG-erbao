@@ -13,7 +13,7 @@ class MetaData(BaseModel):
 
 class AskRequest(BaseModel):
     message: str
-    conversation_id: int = Field(default="", description="conversation id, for history storage")
+    conversation_id: str = Field(default="", description="conversation id, for history storage")
 
 class QueryProcessing(BaseModel):
     english_query: str

@@ -16,7 +16,7 @@ class ConversationService:
         items = self.crud.get_by_user_id(user_id)
         return [ConversationResponse.model_validate(item) for item in items]
 
-    def get_detail(self, conversation_id: int) -> ConversationDetailResponse:
+    def get_detail(self, conversation_id: str) -> ConversationDetailResponse:
         item = self.crud.get_detail(conversation_id)
         if item is None:
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -26,7 +26,7 @@ class ConversationService:
         item = self.crud.create(payload)
         return ConversationResponse.model_validate(item)
 
-    def delete(self, conversation_id: int) -> ConversationResponse:
+    def delete(self, conversation_id: str) -> ConversationResponse:
         item = self.crud.remove(conversation_id)
         if item is None:
             raise HTTPException(status_code=404, detail="Conversation not found")

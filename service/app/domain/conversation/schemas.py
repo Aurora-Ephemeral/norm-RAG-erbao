@@ -11,7 +11,7 @@ class Conversation(BaseModel):
     title: str = Field(default="", max_length=500)
 
 class ConversationCreate(Conversation):
-    pass
+    id: str
 
 class ConversationUpdate(BaseModel):
     title: Optional[str] = Field(default=None, max_length=500)
@@ -19,7 +19,7 @@ class ConversationUpdate(BaseModel):
 
 
 class ConversationInDBBase(Conversation):
-    id: int
+    id: str
     created_time: FormattedDateTime
     updated_time: FormattedDateTime
     model_config = ConfigDict(from_attributes=True)

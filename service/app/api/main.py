@@ -4,7 +4,7 @@ from app.api.routes import knowledgebase
 from app.api.routes import docuemnt
 from app.api.routes import file
 from app.api.routes import conversation
-api_router = APIRouter()
+api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(chat.router)
 api_router.include_router(knowledgebase.router)

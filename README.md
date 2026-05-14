@@ -224,12 +224,24 @@ project/
 │   │       └── minIO.py
 │   └── .env.development            # Local env vars (not committed)
 │
-└── web/                            # Frontend (React + Vite)  ⚠️ In progress
+└── web/                            # Frontend (React 19 + Vite)
     └── src/
-        ├── pages/                  # Pages (placeholders)
-        ├── store/                  # Redux Toolkit
-        ├── components/Layout/      # Top bar + sidebar
-        └── utils/request.ts        # Axios instance with token injection
+        ├── pages/
+        │   └── chat/               # Chat main page + sub-components
+        │       ├── index.tsx        # Layout: sidebar (history) + main panel
+        │       ├── type.ts
+        │       └── components/
+        │           ├── WelcomePage.tsx  # Typewriter intro + mode selector
+        │           └── MessageList.tsx  # SSE streaming message list (Markdown)
+        ├── api/                    # Axios-based API functions (conversation)
+        ├── store/                  # Redux Toolkit (chatSlice)
+        ├── components/Layout/      # Global header + sidebar
+        ├── locales/                # i18n language packs (zh / en), split by feature module
+        │   ├── zh/  (system.tsx, chat.tsx)
+        │   └── en/  (system.tsx, chat.tsx)
+        ├── router.tsx              # React Router v7: / → /chat, /chat/:id?
+        ├── utils/request.ts        # Axios instance with unified error handling
+        └── style/                  # Global CSS + TDesign overrides
 ```
 
 ---
@@ -249,6 +261,10 @@ project/
 - [x] Reranker: DashScope gte-rerank cross-encoder, with RRF-order fallback
 - [x] Retrieval pipeline layer: pluggable strategy design (VectorPipeline / FulltextPipeline / HybridPipeline)
 - [x] Conversation history: `rag_conversation` / `rag_message` tables, `SlidingWindowProvider`, factory pattern, injected into preprocessing + RAG chains; coreference resolution in preprocessing prompt
+- [x] **Frontend — Chat page**: conversation list sidebar, conversation create / switch / history load, SSE streaming message rendering (Markdown), AbortController mid-stream stop
+- [x] **Frontend — Welcome page**: typewriter animation intro, simple / complex mode selector
+- [x] **Frontend — i18n**: zh / en language packs split by feature module (`system`, `chat`), all UI text externalised via `react-i18next`
+- [x] **Frontend — Global layout**: header with language switcher, shared sidebar shell
 
 ### In Progress / Next Up
 
@@ -258,7 +274,9 @@ project/
 ### Planned
 
 - [ ] **User and permission management**: registration/login, KB visibility (PRIVATE / TEAM / PUBLIC), RBAC
-- [ ] **Frontend pages**: knowledge base management, document list, Q&A interface, history view
+- [ ] **Frontend — Knowledge base management**: list, create, delete, per-KB config UI
+- [ ] **Frontend — Document management**: file upload, processing status polling, chunk preview
+- [ ] **Frontend — Conversation delete**: delete button in sidebar is rendered but not yet wired to API
 - [ ] **Document versioning**: `is_latest` field already reserved; supports multiple versions of the same standard
 - [ ] **Evaluation framework**: RAG quality metrics (recall rate, answer relevance)
 - [ ] **Observability**: full-chain tracing (LangSmith or custom), structured logging with request_id, Prometheus + Grafana metrics (QPS / P99 latency / error rate)

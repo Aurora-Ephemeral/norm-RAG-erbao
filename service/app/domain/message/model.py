@@ -20,7 +20,7 @@ class RagMessage(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("rag_conversation.id"), nullable=False)
+    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("rag_conversation.id"), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_time: Mapped[datetime] = mapped_column(
