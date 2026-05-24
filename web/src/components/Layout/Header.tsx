@@ -19,7 +19,7 @@ const Header: React.FC = () => {
     }
 
     const changePage = () => {
-        navigate(isChat ? '/knowledge' : '/chat')
+        navigate(isChat ? '/knowledgeBase' : '/chat')
     }
 
     return (
