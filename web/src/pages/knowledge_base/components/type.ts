@@ -7,3 +7,15 @@ export interface KBListItemProps {
     onEdit: (kb: KnowledgeBase) => void
     onDelete: (kb: KnowledgeBase) => void
 }
+
+export interface DocumentPanelProps {
+    kb: KnowledgeBase
+    onRefresh: () => void
+}
+
+export interface DocumentFilter {
+  knowledge_base_id: number
+  doc_title?: string
+  part_type?: string
+  standard_no?: string
+}

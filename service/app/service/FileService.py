@@ -3,6 +3,7 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.crud.FileCrud import FileCrud
 from app.crud.DocumentCrud import DocumentCrud
+from app.crud.KnowledgeBaseCrud import KnowledgeBaseCrud
 from app.domain.file.md5 import Md5Utils
 from app.domain.document.schemas import DocumentCreate
 from app.domain.file.schemas import RawFile, RawFileCreate, RawFileUploadResult
@@ -13,6 +14,7 @@ class FileService:
         self.db = db
         self.crud = FileCrud(db)
         self.crud_doc = DocumentCrud(db)
+        self.crud_kb = KnowledgeBaseCrud(db)
         self.minio = minio
     _MAX_FILE_SIZE = 20 * 1024 * 1024
     _ALLOWED_EXT = {"pdf"}
@@ -75,11 +77,13 @@ class FileService:
                 part_type=part_type,
                 standard_no=standard_no,
             ))
+            # 6. atomically increment KB document counter
+            self.crud_kb.increment_document_count(knowledge_base_id)
         except Exception as e:
             await self.minio.delete(upload_result.storage_path)
             raise e
 
-        # 6. trigger async parse + chunk pipeline
+        # 7. trigger async parse + chunk pipeline
         processing_document_task.delay(str(db_file.id), str(db_doc.id))
 
         return RawFileUploadResult(

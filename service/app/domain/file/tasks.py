@@ -64,7 +64,8 @@ def processing_document_task(self, file_id: str, document_id: str):
         file_crud.update(fid, RawFileUpdate(
             metadata_json={**existing_meta, **parse_result.metadata},
         ))
-        doc_crud.update(did, DocumentUpdate(chunk_count=len(chunks)))
+        token_count = sum(c.token_count for c in chunks)
+        doc_crud.update(did, DocumentUpdate(chunk_count=len(chunks), token_count=token_count, metadata_json={**existing_meta, **parse_result.metadata}))
         logger.info("processing_document_task done: file_id=%s chunks=%d", fid, len(chunks))
 
         embed_document_task.delay(document_id)

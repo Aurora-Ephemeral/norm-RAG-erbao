@@ -5,16 +5,20 @@ import { useEffect, useState } from 'react'
 import type { KnowledgeBase } from './type'
 import { deleteKB, listAllKB } from '@/api/knowledgebase'
 import KBListItem from './components/KBListItem'
+import DocumentPanel from './components/DocumentPanel'
+
 const KnowledgeBasePage: React.FC = () => {
     
     const { t } = useTranslation()
     const [ showKBModal, setShowKBModal ] = useState(false)
     const [ kbList, setKbList ] = useState<KnowledgeBase[]>([])
     const [kbLoading, setKbLoading] = useState(false)
-    const [selectedKbId, setSelectedKbId] = useState<number | null>(null)
+    const [selectedKb, setSelectedKb] = useState<KnowledgeBase | null>(null)
 
     const handleSelectKB = (kb: KnowledgeBase) => {
-        setSelectedKbId(kb.id)
+        setSelectedKb(kb)
+        // get document list by kb id
+
     }
 
     const handleDeleteKB = async (kb: KnowledgeBase) => {
@@ -23,6 +27,10 @@ const KnowledgeBasePage: React.FC = () => {
 
     const handleEditKB = async (kb: KnowledgeBase) => {
         
+    }
+
+    const handleRefresh = () => {
+
     }
 
     const fetchKBList = async () => {
@@ -46,7 +54,7 @@ const KnowledgeBasePage: React.FC = () => {
         fetchKBList()
     }, [])
     return (
-        <div>
+        <div className="flex h-full overflow-hidden">
             {/* sidebar */}
             <aside className="w-[280px] shrink-0 border-r border-[var(--color-border)] flex flex-col">
                 <div className="flex items-center justify-between p-4 text-[13px] font-medium text-[var(--color-text-secondary)] uppercase tracking-[1px]">
@@ -72,7 +80,7 @@ const KnowledgeBasePage: React.FC = () => {
                                     <KBListItem 
                                         key={kb.id} 
                                         kb={kb}
-                                        active={kb.id == selectedKbId} 
+                                        active={kb.id == selectedKb?.id} 
                                         onSelect={handleSelectKB}
                                         onEdit={handleEditKB}
                                         onDelete={handleDeleteKB}
@@ -85,12 +93,17 @@ const KnowledgeBasePage: React.FC = () => {
             </aside>
             <main className='flex-1 overflow-y-auto'>
                 {
-                    selectedKbId ? (
-                        <div>
-
-                        </div>
+                    selectedKb ? (
+                        <DocumentPanel 
+                            key={selectedKb.id}
+                            kb={selectedKb}
+                            onRefresh={handleRefresh}
+                        />
                     ):(
-                        <Empty title={t('knowledge.sidebar.placeholder')}/>
+                        <div className="h-full flex items-center justify-center">
+                            <Empty title={t('knowledge.sidebar.placeholder')}/>
+                        </div>
+                        
                     )
                 }
             </main>

@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { DocumentFilter } from '@/pages/knowledge_base2/type'
+import type { DocumentFilter } from '@/pages/knowledge_base/type'
 
 /**
  * GET /api/v1/document/listByPage/:current/:size

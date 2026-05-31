@@ -12,6 +12,7 @@ class Chunk:
     text: str
     page: int
     chunk_type: str # "text" | "table"
+    token_count: int
     section_path: List[str] = field(default_factory=list)
     referenced_standards: List[str] = field(default_factory=list)
     rows: Optional[List[List[str]]] = None
@@ -73,6 +74,7 @@ def split_chunks(parsed_result: ParseResult) -> List[Chunk]:
                     text=curr_chunk_text,
                     page=buffer_page,
                     chunk_type='table',
+                    token_count=_calculate_text_tokens(curr_chunk_text),
                     section_path=section_path.copy(),
                     referenced_standards=_extract_standards(curr_chunk_text),
                     rows=curr_rows.copy(),
@@ -87,6 +89,7 @@ def split_chunks(parsed_result: ParseResult) -> List[Chunk]:
                 text=curr_chunk_text,
                 page=buffer_page,
                 chunk_type='table',
+                token_count=_calculate_text_tokens(curr_chunk_text),
                 section_path=section_path.copy(),
                 referenced_standards=_extract_standards(curr_chunk_text),
                 rows=curr_rows.copy(),
@@ -101,6 +104,7 @@ def split_chunks(parsed_result: ParseResult) -> List[Chunk]:
             text=text,
             page=buffer_page,
             chunk_type='text',
+            token_count=_calculate_text_tokens(text),
             section_path=section_path.copy(),
             referenced_standards=_extract_standards(text),
         ))
