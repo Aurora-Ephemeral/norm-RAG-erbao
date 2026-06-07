@@ -15,6 +15,8 @@ import {
 } from 'tdesign-react'
 import type { PrimaryTableCol } from 'tdesign-react'
 import type { DocStatusEnum, Document, KnowledgeBase } from '../type'
+import UploadModal from './UploadModal'
+
 const PAGE_SIZE = 10
 
 const STATUS_TAG: Record<
@@ -38,6 +40,8 @@ const DocumentPanel: React.FC<DocumentPanelProps> = ({kb, onRefresh}) => {
     const [partType, setPartType] = useState('')
     const [standardNo, setStandardNo] = useState('')
     const [loading, setLoading] = useState(false)
+    const [showUploadModal, setShowUploadModal] = useState(false)
+
 
     const fetchDocs = async (current:number, filter: DocumentFilter) => {
         try {
@@ -63,6 +67,14 @@ const DocumentPanel: React.FC<DocumentPanelProps> = ({kb, onRefresh}) => {
         fetchDocs(current, filter)
     }
 
+    const handleOpenUploadModal = () => {
+        setShowUploadModal(true)
+    }
+
+    const handleCloseUploadModal = () => {
+        setShowUploadModal(false)
+    }
+
     const handleSearch = () => {
         
     }
@@ -72,7 +84,7 @@ const DocumentPanel: React.FC<DocumentPanelProps> = ({kb, onRefresh}) => {
     }
 
     const handleRefresh = () => {
-
+        fetchDocs(currPage, filter)
     }
 
     const handleDeleteDoc = async (doc: Document) => {
@@ -184,6 +196,7 @@ const DocumentPanel: React.FC<DocumentPanelProps> = ({kb, onRefresh}) => {
                     <Button
                         theme="primary"
                         icon={<UploadIcon />}
+                        onClick={handleOpenUploadModal}
                     >
                         {t('knowledge.document.upload')}
                     </Button>
@@ -247,6 +260,12 @@ const DocumentPanel: React.FC<DocumentPanelProps> = ({kb, onRefresh}) => {
             >
 
             </Table>
+            <UploadModal 
+                visible={showUploadModal}
+                kbId={kb.id}
+                onCancel={handleCloseUploadModal}
+                onConfirm={handleRefresh}
+            />
         </div>
     )
 }

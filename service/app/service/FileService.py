@@ -51,6 +51,17 @@ class FileService:
                     data=RawFile.model_validate(fetch_file)
                 )
             else:
+                #2.2 add file as a new doc to current knowledge base
+                db_doc = self.crud_doc.create(DocumentCreate(
+                    file_id=fetch_file.id,
+                    knowledge_base_id=knowledge_base_id,
+                    doc_title=fetch_file.file_name,
+                    part_type=part_type,
+                    standard_no=standard_no,
+                ))
+                # 2.3 trigger async parse + chunk pipeline
+                processing_document_task.delay(str(db_file.id), str(db_doc.id))
+
                 return RawFileUploadResult(
                     file_exist = True,
                     doc_exist = False,
